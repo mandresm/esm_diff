@@ -3,7 +3,7 @@ import subprocess
 import argparse
 import math
 
-def missf(f1, f2, name1, name2, cathegory):
+def missf(f1, f2, name1, name2, cathegory, k1=None, k2=None):
     name1 = str(name1)
     name2 = str(name2)
 
@@ -12,7 +12,12 @@ def missf(f1, f2, name1, name2, cathegory):
     print('\n'*vsp, cathegory, name1, 'missing in', name2, '\n', '-'*40)
     not_found = []
     for ff in f1:
-        if ff not in f2:
+        if k1 and k2:
+            if k1 in ff:
+                ffs = ff.replace(k1,k2)
+        else:
+            ffs = ff
+        if ffs not in f2:
             if cathegory=='File' or cathegory=='Folder':
                 not_found.append(ff)
             elif cathegory=='FileType':
@@ -68,7 +73,10 @@ def cprint(clist):
 # Vertical spacing for output
 vsp = 3
 # CDO binary
-cdo = '/global/AWIsoft/cdo/1.9.6/bin/cdo'
+# ollie
+#cdo = '/global/AWIsoft/cdo/1.9.6/bin/cdo'
+# mistral
+cdo = '/sw/rhel6-x64/cdo/cdo-1.9.8-magicsxx-gcc64/bin/cdo'
 
 # Default directory
 esm_diff_dir = os.path.expanduser('~') + '/esm_diff/'
@@ -82,6 +90,7 @@ parser = argparse.ArgumentParser(description='Find differences among the specifi
 parser.add_argument('d1', default=None, nargs='+')
 parser.add_argument('d2', default=None)
 parser.add_argument('-k', '--keyword', default=False)
+parser.add_argument('-s', '--substitute', default=False, nargs=2)
 
 args = vars(parser.parse_args())
 
@@ -91,6 +100,17 @@ d2 = args['d2']
 
 # Load keyword
 kw = args['keyword']
+
+# Load substitution keys
+ks = args['substitute']
+if ks:
+    if len(ks) is 2:
+        k1 = ks[0]
+        k2 = ks[1]
+    else:
+        raise Exception('You need to provide 2 substitution keys, one for each group')
+else:
+    k1 = k2 = None
 
 # List files and folders
 f1 = []
@@ -127,8 +147,8 @@ missf(folders2, folders1, 2, 1, 'Folder')
 
 ftype = input('\n'*vsp + 'Would you like to display missing files (f) or file types (t)? ')
 t = dict(f='File', t='FileType')
-common_files1 = missf(files1, files2, 1, 2, t[ftype])
-common_files2 = missf(files2, files1, 2, 1, t[ftype])
+common_files1 = missf(files1, files2, 1, 2, t[ftype], k1, k2)
+common_files2 = missf(files2, files1, 2, 1, t[ftype], k2, k1)
 
 common_index = []
 for cf in common_files1:
@@ -152,9 +172,20 @@ with open(ndfile,'w') as df:
     if kw:
         df.write('Key: ' + kw + '\n')
     df.write('\n'*3)
+
+# Loop for comparing the common files
 for c, f in enumerate(common_files1):
     file1 = d1[common_index[c]] + '/' + f
-    file2 = d2 + '/' + f
+    # Substitution of k1 by k2 here
+    if k1 is not None and k2 is not None:
+        if k1 in f:
+            f2s = f.replace(k1, k2)
+        else:
+            f2s = f
+    else:
+        f2s = f
+    file2 = d2 + '/' + f2s
+    # Check for missing files
     mf = []
     if not os.path.isfile(file1):
         mf += file1
@@ -162,9 +193,13 @@ for c, f in enumerate(common_files1):
         mf += file2
     if len(mf)>0:
         raise Exception('Missing files:', mf)
+
+    # Compare the two files and save the output in `out` variable
     p = subprocess.Popen([cdo, 'diff', file1, file2], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out = p.communicate()[0].decode('utf-8')
+    # Check for the len of `out`, if `out` > 0 the files are different
     if len(out)>0:
+        # If files are different print `out` and log them
         print(out)
         with open(ndfile,'a') as df:
             title = '\n\n\n' + '=' * len(f) + '\n' + f + '\n' + '=' * len(f) + '\n\n'
@@ -173,14 +208,24 @@ for c, f in enumerate(common_files1):
         dfiles.append(f)
     else:
         ifiles.append(f)
+    # Progress bar
     run = c/niter
     rep = 50
     print('|' + u'\u2588' * round(rep*run) + ' ' * round(rep*(1-run)) + '| ' + str(round(run*1000)/10) + '%   ' + f + ' '*10, end="\r")
 
+# Finish the progress bar
 print('|' + u'\u2588' * rep + '| ' + '100%   ' + f + ' '*10, end="\r")
 
 print()
 
+# Report and log differences
+with open(ndfile,'a') as df:
+    df.write('\n\nFiles compared:\n\n')
+    if not k1 and not k2:
+        k1 = ""
+        k2 = ""
+    for cf in common_files1:
+        df.write(cf + ' --> ' + cf.replace(k1,k2) + '\n')
 if len(dfiles)==0:
     print('\n\nThe following files are identical:')
     cprint(ifiles)
