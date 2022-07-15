@@ -104,7 +104,7 @@ kw = args['keyword']
 # Load substitution keys
 ks = args['substitute']
 if ks:
-    if len(ks) is 2:
+    if len(ks)==2:
         k1 = ks[0]
         k2 = ks[1]
     else:
