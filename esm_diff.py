@@ -75,11 +75,11 @@ vsp = 3
 # CDO binary
 # ollie
 #cdo = '/global/AWIsoft/cdo/1.9.6/bin/cdo'
-# mistral
-cdo = '/sw/rhel6-x64/cdo/cdo-1.9.8-magicsxx-gcc64/bin/cdo'
+# levnate
+cdo = '/sw/spack-levante/cdo-2.0.5-5fascj/bin/cdo'
 
 # Default directory
-esm_diff_dir = os.path.expanduser('~') + '/esm_diff/'
+esm_diff_dir = os.path.dirname(os.path.realpath(__file__))
 # File for saving differences
 ndfile = esm_diff_dir + 'esm_diff.out'
 # Current path
@@ -188,9 +188,9 @@ for c, f in enumerate(common_files1):
     # Check for missing files
     mf = []
     if not os.path.isfile(file1):
-        mf += file1
+        mf.append(file1)
     if not os.path.isfile(file2):
-        mf += file2
+        mf.append(file2)
     if len(mf)>0:
         raise Exception('Missing files:', mf)
 
