@@ -81,7 +81,7 @@ cdo = '/sw/spack-levante/cdo-2.0.5-5fascj/bin/cdo'
 # Default directory
 esm_diff_dir = os.path.dirname(os.path.realpath(__file__))
 # File for saving differences
-ndfile = esm_diff_dir + 'esm_diff.out'
+ndfile = f'{esm_diff_dir}/esm_diff.out'
 # Current path
 cwd = os.getcwd()
 
@@ -194,18 +194,24 @@ for c, f in enumerate(common_files1):
     if len(mf)>0:
         raise Exception('Missing files:', mf)
 
-    # Compare the two files and save the output in `out` variable
-    p = subprocess.Popen([cdo, 'diff', file1, file2], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # Compare the two files with `diff`
+    p = subprocess.Popen(['diff', file1, file2], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out = p.communicate()[0].decode('utf-8')
-    # Check for the len of `out`, if `out` > 0 the files are different
     if len(out)>0:
-        # If files are different print `out` and log them
-        print(out)
-        with open(ndfile,'a') as df:
-            title = '\n\n\n' + '=' * len(f) + '\n' + f + '\n' + '=' * len(f) + '\n\n'
-            df.write(title)
-            df.write(out)
-        dfiles.append(f)
+        # Compare the two files with `cdo diff` and save the output in `out` variable
+        p = subprocess.Popen([cdo, 'diff', file1, file2], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out = p.communicate()[0].decode('utf-8')
+        # Check for the len of `out`, if `out` > 0 the files are different
+        if len(out)>0:
+            # If files are different print `out` and log them
+            print(out)
+            with open(ndfile,'a') as df:
+                title = '\n\n\n' + '=' * len(f) + '\n' + f + '\n' + '=' * len(f) + '\n\n'
+                df.write(title)
+                df.write(out)
+            dfiles.append(f)
+        else:
+            ifiles.append(f)
     else:
         ifiles.append(f)
     # Progress bar
