@@ -78,8 +78,8 @@ if __name__ == "__main__":
             logger.warning(f"\t- {sect}")
         sys.exit(1)
     elif rep_sect:
-        # Remove this sections from the namelists
         new_nmls = []
+        # Remove this sections from the namelists
         for nml in nmls:
             for sect in rep_sect:
                 c = 0
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         for sect in rep_sect:
             logger.warning(f"\t- {sect}")
         logger.warning("")
-    nmls = new_nmls
+        nmls = new_nmls
     # Removed repeated sections
     new_sections = []
     for nml in sections:
