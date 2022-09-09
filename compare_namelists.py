@@ -21,6 +21,8 @@ if __name__ == "__main__":
         filter={"": "WARNING", "esm_tests": "DEBUG"},
         format="<level>{message}</level>",
     )
+    logger.level("WARNING", color="<white>")
+    logger = logger.opt(ansi=True)
 
     logger.info("")
     logger.info("Welcome to NML-Copare!")
@@ -57,13 +59,15 @@ if __name__ == "__main__":
 
     different_namelists = False
     if missing_sec_in_1:
-        logger.warning(f"{nml1_path} is missing the following sections:")
-        logger.warning(f"\t{missing_sec_in_1}")
+        logger.warning(f"<red>{nml1_path}</red> is missing the following sections:")
+        for sect in missing_sec_in_1:
+            logger.warning(f"\t- <red>{sect}</red>")
         logger.warning("")
         different_namelists = True
     if missing_sec_in_2:
-        logger.warning(f"{nml2_path} is missing the following sections:")
-        logger.warning(f"\t{missing_sec_in_2}")
+        logger.warning(f"<red>{nml2_path}</red> is missing the following sections:")
+        for sect in missing_sec_in_2:
+            logger.warning(f"\t- <red>{sect}</red>")
         logger.warning("")
         different_namelists = True
 
@@ -76,9 +80,11 @@ if __name__ == "__main__":
                 missing_var_in_1[section] = missing
     if missing_var_in_1:
         different_namelists = True
-        logger.warning(f"{nml1_path} is missing the following vars:")
+        logger.warning(f"<red>{nml1_path}</red> is missing the following vars:")
         for key, value in missing_var_in_1.items():
-            logger.warning(f"\t{key}: {value}")
+            logger.warning(f"\t{key}:")
+            for var in value:
+                logger.warning(f"\t\t- <red>{var}</red>")
         logger.warning("")
 
     missing_var_in_2 = {}
@@ -89,15 +95,26 @@ if __name__ == "__main__":
                 missing_var_in_2[section] = missing
     if missing_var_in_2:
         different_namelists = True
-        logger.warning(f"{nml2_path} is missing the following vars:")
+        logger.warning(f"<red>{nml2_path}</red> is missing the following vars:")
         for key, value in missing_var_in_2.items():
-            logger.warning(f"\t{key}: {value}")
+            logger.warning(f"\t{key}:")
+            for var in value:
+                logger.warning(f"\t\t- <red>{var}</red>")
         logger.warning("")
 
     # Compare variables here
+    common_namelist = [{}, {}]
+    for section in sections[0]:
+        if section in sections[1]:
+            for var in nmls[0][section]:
+                if var in nmls[1][section]:
+                    if nmls[0][section][var]!=nmls[1][section][var]:
+                        logger.warning(f"\t{section}.<red>{var}</red> differ!")
+                        different_namelists = True
+
 
     # Notify general differences
     if different_namelists:
         logger.error("Namelists are different!")
     else:
-        logger.info("Namelists are identical")
+        logger.warning("Namelists are identical")
