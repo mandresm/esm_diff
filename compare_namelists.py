@@ -33,12 +33,20 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compare 2 namelists with different formats")
     parser.add_argument('nml1', default=None)
     parser.add_argument('nml2', default=None)
+    parser.add_argument(
+        "-i",
+        "--ignore-rep",
+        help="Ignore repeated sections in a namelist",
+        action="store_true",
+        default=False,
+    )
 
     args = vars(parser.parse_args())
 
     # Load directories
     nml1_path = args['nml1']
     nml2_path = args['nml2']
+    ignore_rep = args["ignore_rep"]
 
     # Load namelists
     nml_paths = [nml1_path, nml2_path]
@@ -52,6 +60,45 @@ if __name__ == "__main__":
         else:
             logger.error(f"{path} is not a file.")
             sys.exit(1)
+
+    # Are there any sections repeated?
+    rep_sect = []
+    for nml in sections:
+        for sect in nml:
+            if nml.count(sect)>1:
+                rep_sect.append(sect)
+    rep_sect = list(set(rep_sect))
+    if rep_sect and not ignore_rep:
+        logger.warning(
+            "These namelists contain repeated sections and cannot be compared. Use the "
+            "<red>--ignore-rep</red> or simply <red>-i</red> flags for ignoring this "
+            "sections and be able to compare the rest.\n\nRepeated sections:"
+        )
+        for sect in rep_sect:
+            logger.warning(f"\t- {sect}")
+        sys.exit(1)
+    elif rep_sect:
+        # Remove this sections from the namelists
+        new_nmls = []
+        for nml in nmls:
+            for sect in rep_sect:
+                c = 0
+                while f"_grp_{sect}_{c}" in nml:
+                    del nml[f"_grp_{sect}_{c}"]
+                    c += 1
+            new_nmls.append(nml)
+        logger.warning("Some sections are repeated in the namelists and won't be compared:")
+        for sect in rep_sect:
+            logger.warning(f"\t- {sect}")
+        logger.warning("")
+    nmls = new_nmls
+    # Removed repeated sections
+    new_sections = []
+    for nml in sections:
+        for sect in rep_sect:
+            nml = [value for value in nml if value != sect]
+        new_sections.append(nml)
+    sections = new_sections
 
     # Check missing sections
     missing_sec_in_1 = check_missing_elements(sections[0], sections[1])
