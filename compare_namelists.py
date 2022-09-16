@@ -156,7 +156,7 @@ if __name__ == "__main__":
             for var in nmls[0][section]:
                 if var in nmls[1][section]:
                     if nmls[0][section][var]!=nmls[1][section][var]:
-                        logger.warning(f"\t{section}.<red>{var}</red> differ!")
+                        logger.warning(f"\t{section}.<red>{var}</red> differ!\t{nmls[0][section][var]}\t{nmls[1][section][var]}")
                         different_namelists = True
 
 
