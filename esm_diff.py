@@ -42,15 +42,16 @@ def missf(f1, f2, name1, name2, cathegory, k1=None, k2=None):
 
 def cprint(clist):
     # Read width of the console
-    rows, columns = os.popen('stty size', 'r').read().split()
-    columns = int(columns)
+    #rows, columns = os.popen('stty size', 'r').read().split()
+    #columns = int(columns)
+    columns = 100
     # Largest string length in the list
     if len(clist)==0:
         llen = 1
     else:
         llen = len(max(clist, key=len)) + 4
     # Find number of printing columns
-    num_columns = int(columns/llen)
+    num_columns = 1
 
     # Sort clist
     clist = sorted(clist)
